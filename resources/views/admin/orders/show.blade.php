@@ -45,11 +45,30 @@
             <div class="divide-y divide-gray-200">
                 @foreach($order->orderItems as $item)
                     <div class="py-4 flex justify-between">
-                        <div>
-                            <p class="font-medium text-gray-900">{{ $item->product->name }}</p>
-                            <p class="text-sm text-gray-500">Qty: {{ $item->quantity }} × Rp {{ number_format($item->price, 0, ',', '.') }}</p>
+                        <div class="flex-1">
+                            @if($item->isPackage() && $item->package)
+                                <div class="flex items-center gap-2 mb-1">
+                                    <p class="font-medium text-gray-900">{{ $item->package->name }}</p>
+                                    <span class="px-2 py-0.5 text-xs font-semibold rounded bg-[#2e4358] text-white">Paket</span>
+                                </div>
+                                @if($item->components)
+                                    <div class="text-xs text-gray-600 mt-1 ml-2">
+                                        <p class="font-semibold mb-1">Isi paket:</p>
+                                        <ul class="list-disc list-inside space-y-0.5">
+                                            @foreach($item->components as $component)
+                                                <li>{{ $component['name'] }} x{{ $component['qty'] }}</li>
+                                            @endforeach
+                                        </ul>
+                                    </div>
+                                @endif
+                            @elseif($item->product)
+                                <p class="font-medium text-gray-900">{{ $item->product->name }}</p>
+                            @else
+                                <p class="font-medium text-gray-900">Item #{{ $item->id }}</p>
+                            @endif
+                            <p class="text-sm text-gray-500 mt-1">Qty: {{ $item->quantity }} × Rp {{ number_format($item->price, 0, ',', '.') }}</p>
                         </div>
-                        <p class="font-semibold text-gray-900">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</p>
+                        <p class="font-semibold text-gray-900 ml-4">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</p>
                     </div>
                 @endforeach
             </div>

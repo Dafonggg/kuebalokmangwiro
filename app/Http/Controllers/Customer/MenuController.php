@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Customer;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductPackage;
 use Illuminate\Http\Request;
 
 class MenuController extends Controller
@@ -22,9 +23,10 @@ class MenuController extends Controller
         }
 
         $products = $query->get();
+        $packages = ProductPackage::active()->with('items.product')->get();
         $categories = Category::where('is_active', true)->get();
 
-        return view('customer.menu.index', compact('products', 'categories'));
+        return view('customer.menu.index', compact('products', 'packages', 'categories'));
     }
 
     public function show(Product $product)

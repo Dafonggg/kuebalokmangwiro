@@ -8,6 +8,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Payment;
 use App\Models\Product;
+use App\Models\ProductPackage;
 use App\Services\OrderCodeGenerator;
 use Illuminate\Http\Request;
 
@@ -17,8 +18,9 @@ class CashierController extends Controller
     {
         $categories = Category::where('is_active', true)->with(['activeProducts'])->get();
         $products = Product::active()->with('category')->get();
+        $packages = ProductPackage::active()->with('items.product.category')->get();
         
-        return view('admin.cashier.index', compact('categories', 'products'));
+        return view('admin.cashier.index', compact('categories', 'products', 'packages'));
     }
 
     public function store(Request $request)
@@ -30,7 +32,7 @@ class CashierController extends Controller
             'payment_method' => 'required|in:cash,qris,bank_transfer,manual',
             'notes' => 'nullable|string|max:1000',
             'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.item_type' => 'required|in:product,package',
             'items.*.quantity' => 'required|integer|min:1',
         ]);
 
@@ -39,7 +41,7 @@ class CashierController extends Controller
         $categoryQuantities = []; // Track quantities per category
 
         foreach ($request->items as $item) {
-            if (!isset($item['product_id']) || !isset($item['quantity'])) {
+            if (!isset($item['item_type']) || !isset($item['quantity'])) {
                 continue;
             }
 
@@ -48,37 +50,98 @@ class CashierController extends Controller
                 continue;
             }
 
-            $product = Product::with('category')->find($item['product_id']);
-            if (!$product || !$product->is_active) {
-                continue;
+            $itemType = $item['item_type'];
+
+            if ($itemType === 'package') {
+                $package = ProductPackage::with('items.product.category')->find($item['package_id'] ?? $item['id']);
+                if (!$package || !$package->is_active) {
+                    continue;
+                }
+
+                // Check stock for each product in package
+                foreach ($package->items as $packageItem) {
+                    $product = $packageItem->product;
+                    $category = $product->category;
+                    
+                    if (!$category || !$category->is_active) {
+                        continue;
+                    }
+
+                    $requiredQty = $quantity * $packageItem->qty;
+                    
+                    // Track quantity per category
+                    if (!isset($categoryQuantities[$category->id])) {
+                        $categoryQuantities[$category->id] = 0;
+                    }
+                    $categoryQuantities[$category->id] += $requiredQty;
+
+                    // Check stock availability for category
+                    if ($category->stock < $categoryQuantities[$category->id]) {
+                        return redirect()->back()->with('error', 'Stok tidak cukup untuk kategori: ' . $category->name . '. Stok tersedia: ' . $category->stock);
+                    }
+                }
+
+                $price = $package->price;
+                $subtotal = $price * $quantity;
+                $totalAmount += $subtotal;
+
+                // Prepare components JSON for package
+                $components = [];
+                foreach ($package->items as $packageItem) {
+                    $components[] = [
+                        'product_id' => $packageItem->product_id,
+                        'name' => $packageItem->product->name,
+                        'qty' => $packageItem->qty,
+                    ];
+                }
+
+                $orderItems[] = [
+                    'item_type' => 'product_package',
+                    'reference_id' => $package->id,
+                    'product_id' => null,
+                    'quantity' => $quantity,
+                    'price' => $price,
+                    'subtotal' => $subtotal,
+                    'components' => $components,
+                ];
+            } else {
+                // Handle product items
+                $productId = $item['product_id'] ?? $item['id'];
+                $product = Product::with('category')->find($productId);
+                if (!$product || !$product->is_active) {
+                    continue;
+                }
+
+                $category = $product->category;
+                if (!$category || !$category->is_active) {
+                    continue;
+                }
+
+                // Track quantity per category
+                if (!isset($categoryQuantities[$category->id])) {
+                    $categoryQuantities[$category->id] = 0;
+                }
+                $categoryQuantities[$category->id] += $quantity;
+
+                // Check stock availability for category
+                if ($category->stock < $categoryQuantities[$category->id]) {
+                    return redirect()->back()->with('error', 'Stok tidak cukup untuk kategori: ' . $category->name . '. Stok tersedia: ' . $category->stock);
+                }
+
+                $price = $product->price;
+                $subtotal = $price * $quantity;
+                $totalAmount += $subtotal;
+
+                $orderItems[] = [
+                    'item_type' => 'product',
+                    'reference_id' => $productId,
+                    'product_id' => $productId,
+                    'quantity' => $quantity,
+                    'price' => $price,
+                    'subtotal' => $subtotal,
+                    'components' => null,
+                ];
             }
-
-            $category = $product->category;
-            if (!$category || !$category->is_active) {
-                continue;
-            }
-
-            // Track quantity per category
-            if (!isset($categoryQuantities[$category->id])) {
-                $categoryQuantities[$category->id] = 0;
-            }
-            $categoryQuantities[$category->id] += $quantity;
-
-            // Check stock availability for category
-            if ($category->stock < $categoryQuantities[$category->id]) {
-                return redirect()->back()->with('error', 'Stok tidak cukup untuk kategori: ' . $category->name . '. Stok tersedia: ' . $category->stock);
-            }
-
-            $price = $product->price;
-            $subtotal = $price * $quantity;
-            $totalAmount += $subtotal;
-
-            $orderItems[] = [
-                'product_id' => $product->id,
-                'quantity' => $quantity,
-                'price' => $price,
-                'subtotal' => $subtotal,
-            ];
         }
 
         if (empty($orderItems)) {
@@ -108,10 +171,13 @@ class CashierController extends Controller
         foreach ($orderItems as $item) {
             OrderItem::create([
                 'order_id' => $order->id,
-                'product_id' => $item['product_id'],
+                'item_type' => $item['item_type'],
+                'reference_id' => $item['reference_id'],
+                'product_id' => $item['product_id'] ?? null,
                 'quantity' => $item['quantity'],
                 'price' => $item['price'],
                 'subtotal' => $item['subtotal'],
+                'components' => $item['components'] ?? null,
             ]);
         }
 
@@ -129,7 +195,7 @@ class CashierController extends Controller
 
     public function showReceipt(Order $order)
     {
-        $order->load(['orderItems.product', 'payments']);
+        $order->load(['orderItems.product', 'orderItems.package.items.product', 'payments']);
         return view('admin.cashier.receipt', compact('order'));
     }
 }

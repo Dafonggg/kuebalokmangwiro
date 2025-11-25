@@ -67,10 +67,14 @@
 
             <div>
                 <label class="flex items-center">
+                    <input type="hidden" name="is_active" value="0">
                     <input type="checkbox" name="is_active" value="1" {{ old('is_active', true) ? 'checked' : '' }}
                            class="rounded border-gray-300 text-[#2e4358] shadow-sm focus:border-[#2e4358]/50 focus:ring focus:ring-[#2e4358]/20 focus:ring-opacity-50">
                     <span class="ml-2 text-sm text-gray-700">Aktif</span>
                 </label>
+                @error('is_active')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
             </div>
 
             <div class="flex justify-end space-x-3">

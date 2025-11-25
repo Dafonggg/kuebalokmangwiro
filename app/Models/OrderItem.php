@@ -10,9 +10,12 @@ class OrderItem extends Model
     protected $fillable = [
         'order_id',
         'product_id',
+        'item_type',
+        'reference_id',
         'quantity',
         'price',
         'subtotal',
+        'components',
     ];
 
     protected function casts(): array
@@ -21,6 +24,7 @@ class OrderItem extends Model
             'quantity' => 'integer',
             'price' => 'decimal:2',
             'subtotal' => 'decimal:2',
+            'components' => 'array',
         ];
     }
 
@@ -32,5 +36,20 @@ class OrderItem extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function package(): BelongsTo
+    {
+        return $this->belongsTo(ProductPackage::class, 'reference_id');
+    }
+
+    public function isPackage(): bool
+    {
+        return $this->item_type === 'product_package';
+    }
+
+    public function isProduct(): bool
+    {
+        return $this->item_type === 'product';
     }
 }

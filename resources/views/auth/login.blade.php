@@ -4,115 +4,102 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Login - Admin Kue Mang Wiro</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-    <link rel="stylesheet" href="{{ asset('Animated-LoginForm-main/css/style.css') }}">
-    <style>
-        .error-message {
-            background-color: #fee;
-            border: 1px solid #fcc;
-            color: #c33;
-            font-size: 12px;
-            padding: 10px 15px;
-            border-radius: 8px;
-            margin: 10px 0;
-            width: 100%;
-        }
-        .error-message ul {
-            list-style: none;
-            margin: 0;
-            padding: 0;
-        }
-        .error-message li {
-            margin: 5px 0;
-        }
-        .remember-me {
-            display: flex;
-            align-items: center;
-            margin: 15px 0;
-            width: 100%;
-        }
-        .remember-me input[type="checkbox"] {
-            width: auto;
-            margin: 0 8px 0 0;
-            cursor: pointer;
-        }
-        .remember-me label {
-            font-size: 13px;
-            color: #333;
-            cursor: pointer;
-        }
-        .container {
-            width: 100%;
-            max-width: 500px;
-        }
-        .form-container.sign-in {
-            width: 100%;
-            position: relative;
-        }
-        .logo-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        .logo-container img {
-            max-width: 150px;
-            height: auto;
-            object-fit: contain;
-        }
-        .container button[type="submit"] {
-            background-color: #2e4358;
-            color: #fff;
-        }
-        .container button[type="submit"]:hover {
-            background-color: #1a2a3a;
-        }
-    </style>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body>
-    <div class="container" id="container">
-        <div class="form-container sign-in">
-            <form action="{{ route('admin.login.post') }}" method="POST">
-                @csrf
-                <div class="logo-container">
-                    <img src="{{ asset('images/logoke1.png') }}" alt="Kue Balok Mang Wiro">
-                </div>
-                <h1>Sign In</h1>
-                <span>or use your email and password</span>
-                
-                @if($errors->any())
-                    <div class="error-message" role="alert">
-                        <ul>
-                            @foreach($errors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
-                        </ul>
+<body class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
+    <div class="w-full max-w-md">
+        <!-- Login Card -->
+        <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+            <!-- Card Grid Layout -->
+            <div class="grid grid-cols-1">
+                <!-- Logo Section -->
+                <div class="bg-gradient-to-br from-[#ffffff] to-[#ffffff] p-8 flex items-center justify-center">
+                    <div class="w-full max-w-[180px]">
+                        <img src="{{ asset('images/logoke1.png') }}" 
+                             alt="Kue Balok Mang Wiro" 
+                             class="w-full h-auto object-contain">
                     </div>
-                @endif
-                
-                <input type="email" 
-                       name="email" 
-                       id="email"
-                       placeholder="Email" 
-                       value="{{ old('email') }}"
-                       required>
-                <input type="password" 
-                       name="password" 
-                       id="password"
-                       placeholder="Password"
-                       required>
-                
-                <div class="remember-me">
-                    <input type="checkbox" 
-                           id="remember" 
-                           name="remember"
-                           {{ old('remember') ? 'checked' : '' }}>
-                    <label for="remember">Remember me</label>
                 </div>
                 
-                <button type="submit">Sign in</button>
-            </form>
+                <!-- Form Section -->
+                <div class="p-6 sm:p-8">
+                    <div class="mb-6">
+                        <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Sign In</h1>
+                        <p class="text-sm text-gray-600">Masukkan email dan password Anda</p>
+                    </div>
+                    
+                    <form action="{{ route('admin.login.post') }}" method="POST" class="space-y-5">
+                        @csrf
+                        
+                        <!-- Error Messages -->
+                        @if($errors->any())
+                            <div class="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-lg" role="alert">
+                                <ul class="list-none space-y-1">
+                                    @foreach($errors->all() as $error)
+                                        <li class="text-sm flex items-start">
+                                            <svg class="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                                            </svg>
+                                            <span>{{ $error }}</span>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+                        
+                        <!-- Email Input -->
+                        <div class="space-y-2">
+                            <label for="email" class="block text-sm font-medium text-gray-700">
+                                Email
+                            </label>
+                            <input type="email" 
+                                   name="email" 
+                                   id="email"
+                                   placeholder="nama@email.com" 
+                                   value="{{ old('email') }}"
+                                   required
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2e4358] focus:border-transparent outline-none transition-all duration-200 text-gray-900 placeholder-gray-400">
+                        </div>
+                        
+                        <!-- Password Input -->
+                        <div class="space-y-2">
+                            <label for="password" class="block text-sm font-medium text-gray-700">
+                                Password
+                            </label>
+                            <input type="password" 
+                                   name="password" 
+                                   id="password"
+                                   placeholder="Masukkan password"
+                                   required
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2e4358] focus:border-transparent outline-none transition-all duration-200 text-gray-900 placeholder-gray-400">
+                        </div>
+                        
+                        <!-- Remember Me -->
+                        <div class="flex items-center">
+                            <input type="checkbox" 
+                                   id="remember" 
+                                   name="remember"
+                                   {{ old('remember') ? 'checked' : '' }}
+                                   class="w-4 h-4 text-[#2e4358] border-gray-300 rounded focus:ring-[#2e4358] focus:ring-2 cursor-pointer">
+                            <label for="remember" class="ml-2 text-sm text-gray-700 cursor-pointer">
+                                Ingat saya
+                            </label>
+                        </div>
+                        
+                        <!-- Submit Button -->
+                        <button type="submit" 
+                                class="w-full bg-[#2e4358] text-white py-3 px-4 rounded-lg font-semibold hover:bg-[#1a2a3a] focus:outline-none focus:ring-2 focus:ring-[#2e4358] focus:ring-offset-2 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]">
+                            Masuk
+                        </button>
+                    </form>
+                </div>
+            </div>
         </div>
+        
+        <!-- Footer Text -->
+        <p class="text-center text-sm text-gray-600 mt-6">
+            © 2025 Kue Mang Wiro. All rights reserved.
+        </p>
     </div>
 </body>
 </html>

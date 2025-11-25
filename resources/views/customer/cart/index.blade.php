@@ -18,26 +18,42 @@
 @else
     <div class="bg-white rounded-lg shadow-md overflow-hidden">
         <div class="divide-y divide-gray-200">
-            @foreach($items as $productId => $item)
+            @foreach($items as $key => $item)
                 <div class="p-4 flex items-center gap-4">
                     <div class="flex-1">
-                        <h3 class="text-lg font-semibold text-gray-900">{{ $item['product']->name }}</h3>
-                        <p class="text-sm text-gray-600">Rp {{ number_format($item['product']->price, 0, ',', '.') }} per item</p>
+                        @if(isset($item['package']))
+                            <div class="flex items-center gap-2 mb-1">
+                                <h3 class="text-lg font-semibold text-gray-900">{{ $item['package']->name }}</h3>
+                                <span class="bg-[#2e4358] text-white text-xs font-semibold px-2 py-0.5 rounded">Paket</span>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-2">Rp {{ number_format($item['package']->price, 0, ',', '.') }} per paket</p>
+                            <div class="text-xs text-gray-500">
+                                <p class="font-semibold mb-1">Isi paket:</p>
+                                <ul class="list-disc list-inside">
+                                    @foreach($item['package']->items as $packageItem)
+                                        <li>{{ $packageItem->product->name }} x{{ $packageItem->qty }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @elseif(isset($item['product']))
+                            <h3 class="text-lg font-semibold text-gray-900">{{ $item['product']->name }}</h3>
+                            <p class="text-sm text-gray-600">Rp {{ number_format($item['product']->price, 0, ',', '.') }} per item</p>
+                        @endif
                     </div>
                     <div class="flex items-center gap-4">
-                        <form action="{{ route('cart.update', $productId) }}" method="POST" class="flex items-center gap-2">
+                        <form action="{{ route('cart.update', $key) }}" method="POST" class="flex items-center gap-2">
                             @csrf
                             @method('PUT')
-                            <button type="button" onclick="decreaseQuantity({{ $productId }})" class="bg-gray-200 text-gray-700 px-3 py-1 rounded hover:bg-gray-300">-</button>
+                            <button type="button" onclick="decreaseQuantity('{{ $key }}')" class="bg-gray-200 text-gray-700 px-3 py-1 rounded hover:bg-gray-300">-</button>
                             <input type="number" name="quantity" value="{{ $item['quantity'] }}" min="1" 
                                    class="w-16 text-center border border-gray-300 rounded px-2 py-1" 
                                    onchange="this.form.submit()">
-                            <button type="button" onclick="increaseQuantity({{ $productId }})" class="bg-gray-200 text-gray-700 px-3 py-1 rounded hover:bg-gray-300">+</button>
+                            <button type="button" onclick="increaseQuantity('{{ $key }}')" class="bg-gray-200 text-gray-700 px-3 py-1 rounded hover:bg-gray-300">+</button>
                         </form>
                         <span class="text-lg font-semibold text-gray-900 w-24 text-right">
                             Rp {{ number_format($item['subtotal'], 0, ',', '.') }}
                         </span>
-                        <form action="{{ route('cart.remove', $productId) }}" method="POST" class="inline">
+                        <form action="{{ route('cart.remove', $key) }}" method="POST" class="inline">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="text-red-600 hover:text-red-800">
@@ -63,14 +79,14 @@
 @endif
 
 <script>
-    function increaseQuantity(productId) {
+    function increaseQuantity(key) {
         const form = event.target.closest('form');
         const input = form.querySelector('input[name="quantity"]');
         input.value = parseInt(input.value) + 1;
         form.submit();
     }
 
-    function decreaseQuantity(productId) {
+    function decreaseQuantity(key) {
         const form = event.target.closest('form');
         const input = form.querySelector('input[name="quantity"]');
         if (parseInt(input.value) > 1) {

@@ -33,9 +33,13 @@
 
             <div>
                 <label class="flex items-center">
-                    <input type="checkbox" name="is_active" value="1" {{ old('is_active', $category->is_active) ? 'checked' : '' }}
-                           class="rounded border-gray-300 text-[#2e4358] shadow-sm focus:border-[#2e4358]/50 focus:ring focus:ring-[#2e4358]/20 focus:ring-opacity-50">
-                    <span class="ml-2 text-sm text-gray-700">Aktif</span>
+                    <input type="hidden" name="is_active" value="0">
+                    <div class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" name="is_active" value="1" {{ old('is_active', $category->is_active) ? 'checked' : '' }}
+                               class="sr-only peer">
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#2e4358]/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#2e4358]"></div>
+                        <span class="ml-3 text-sm text-gray-700">Aktif</span>
+                    </div>
                 </label>
             </div>
 

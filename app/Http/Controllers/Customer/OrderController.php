@@ -8,6 +8,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Payment;
 use App\Models\Product;
+use App\Models\ProductPackage;
 use App\Services\OrderCodeGenerator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -45,40 +46,100 @@ class OrderController extends Controller
         $orderItems = [];
         $categoryQuantities = []; // Track quantities per category
 
-        foreach ($cart as $productId => $item) {
-            $product = Product::with('category')->find($productId);
-            if (!$product || !$product->is_active) {
-                continue;
-            }
-
-            $category = $product->category;
-            if (!$category || !$category->is_active) {
-                continue;
-            }
-
+        foreach ($cart as $key => $item) {
+            $itemType = $item['item_type'] ?? 'product';
             $quantity = $item['quantity'];
             
-            // Track quantity per category
-            if (!isset($categoryQuantities[$category->id])) {
-                $categoryQuantities[$category->id] = 0;
+            if ($itemType === 'package') {
+                $package = ProductPackage::with('items.product.category')->find($item['id']);
+                if (!$package || !$package->is_active) {
+                    continue;
+                }
+
+                // Check stock for each product in package
+                foreach ($package->items as $packageItem) {
+                    $product = $packageItem->product;
+                    $category = $product->category;
+                    
+                    if (!$category || !$category->is_active) {
+                        continue;
+                    }
+
+                    $requiredQty = $quantity * $packageItem->qty;
+                    
+                    // Track quantity per category
+                    if (!isset($categoryQuantities[$category->id])) {
+                        $categoryQuantities[$category->id] = 0;
+                    }
+                    $categoryQuantities[$category->id] += $requiredQty;
+
+                    // Check stock availability for category
+                    if ($category->stock < $categoryQuantities[$category->id]) {
+                        return redirect()->route('cart.index')->with('error', 'Stok tidak cukup untuk kategori: ' . $category->name . '. Stok tersedia: ' . $category->stock);
+                    }
+                }
+
+                $price = $package->price;
+                $subtotal = $price * $quantity;
+                $totalAmount += $subtotal;
+
+                // Prepare components JSON for package
+                $components = [];
+                foreach ($package->items as $packageItem) {
+                    $components[] = [
+                        'product_id' => $packageItem->product_id,
+                        'name' => $packageItem->product->name,
+                        'qty' => $packageItem->qty,
+                    ];
+                }
+
+                $orderItems[] = [
+                    'item_type' => 'product_package',
+                    'reference_id' => $package->id,
+                    'product_id' => null,
+                    'quantity' => $quantity,
+                    'price' => $price,
+                    'subtotal' => $subtotal,
+                    'components' => $components,
+                ];
+            } else {
+                // Handle product items
+                $productId = is_numeric($key) ? $key : ($item['id'] ?? null);
+                $product = Product::with('category')->find($productId);
+                if (!$product || !$product->is_active) {
+                    continue;
+                }
+
+                $category = $product->category;
+                if (!$category || !$category->is_active) {
+                    continue;
+                }
+                
+                // Track quantity per category
+                if (!isset($categoryQuantities[$category->id])) {
+                    $categoryQuantities[$category->id] = 0;
+                }
+                $categoryQuantities[$category->id] += $quantity;
+
+                // Check stock availability for category
+                if ($category->stock < $categoryQuantities[$category->id]) {
+                    return redirect()->route('cart.index')->with('error', 'Stok tidak cukup untuk kategori: ' . $category->name . '. Stok tersedia: ' . $category->stock);
+                }
+
+                $price = $product->price;
+                $subtotal = $price * $quantity;
+                $totalAmount += $subtotal;
+
+                $orderItems[] = [
+                    'item_type' => 'product',
+                    'reference_id' => $productId,
+                    'product_id' => $productId,
+                    'quantity' => $quantity,
+                    'price' => $price,
+                    'subtotal' => $subtotal,
+                    'components' => null,
+                ];
             }
-            $categoryQuantities[$category->id] += $quantity;
-
-            // Check stock availability for category
-            if ($category->stock < $categoryQuantities[$category->id]) {
-                return redirect()->route('cart.index')->with('error', 'Stok tidak cukup untuk kategori: ' . $category->name . '. Stok tersedia: ' . $category->stock);
-            }
-
-            $price = $product->price;
-            $subtotal = $price * $quantity;
-            $totalAmount += $subtotal;
-
-            $orderItems[] = [
-                'product_id' => $productId,
-                'quantity' => $quantity,
-                'price' => $price,
-                'subtotal' => $subtotal,
-            ];
         }
 
         if (empty($orderItems)) {
@@ -127,10 +188,13 @@ class OrderController extends Controller
         foreach ($orderItems as $item) {
             OrderItem::create([
                 'order_id' => $order->id,
-                'product_id' => $item['product_id'],
+                'item_type' => $item['item_type'],
+                'reference_id' => $item['reference_id'],
+                'product_id' => $item['product_id'] ?? null,
                 'quantity' => $item['quantity'],
                 'price' => $item['price'],
                 'subtotal' => $item['subtotal'],
+                'components' => $item['components'] ?? null,
             ]);
         }
 
@@ -143,7 +207,7 @@ class OrderController extends Controller
     public function show($orderCode)
     {
         $order = Order::where('order_code', $orderCode)
-            ->with(['orderItems.product'])
+            ->with(['orderItems.product', 'orderItems.package.items.product'])
             ->firstOrFail();
 
         return view('customer.order.show', compact('order'));

@@ -3,13 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Product extends Model
+class ProductPackage extends Model
 {
     protected $fillable = [
-        'category_id',
         'name',
         'description',
         'price',
@@ -25,19 +23,9 @@ class Product extends Model
         ];
     }
 
-    public function category(): BelongsTo
+    public function items(): HasMany
     {
-        return $this->belongsTo(Category::class);
-    }
-
-    public function orderItems(): HasMany
-    {
-        return $this->hasMany(OrderItem::class);
-    }
-
-    public function packageItems(): HasMany
-    {
-        return $this->hasMany(ProductPackageItem::class);
+        return $this->hasMany(ProductPackageItem::class, 'package_id');
     }
 
     public function scopeActive($query)

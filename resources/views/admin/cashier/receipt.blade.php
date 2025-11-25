@@ -78,8 +78,23 @@
             @foreach($order->orderItems as $item)
                 <div class="mb-2">
                     <div class="grid grid-cols-3 gap-2 text-sm">
-                        <span class="flex-1">{{ $item->product->name }}</span>
-                        <span class="text-center">{{ $item->quantity }} @ {{ number_format($item->price, 0, ',', '.') }}</span>
+                        <span class="flex-1">
+                            @if($item->isPackage() && $item->package)
+                                <span class="font-semibold">{{ $item->package->name }}</span>
+                                @if($item->components)
+                                    <div class="text-xs text-gray-600 mt-0.5">
+                                        @foreach($item->components as $component)
+                                            <div>• {{ $component['name'] }} x{{ $component['qty'] }}</div>
+                                        @endforeach
+                                    </div>
+                                @endif
+                            @elseif($item->product)
+                                {{ $item->product->name }}
+                            @else
+                                Item #{{ $item->id }}
+                            @endif
+                        </span>
+                        <span class="text-center">{{ $item->quantity }} x {{ number_format($item->price, 0, ',', '.') }}</span>
                         <span class="text-right">{{ number_format($item->subtotal, 0, ',', '.') }}</span>
                     </div>
                 </div>

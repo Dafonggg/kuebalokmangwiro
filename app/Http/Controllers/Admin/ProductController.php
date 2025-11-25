@@ -33,6 +33,9 @@ class ProductController extends Controller
             'is_active' => 'boolean',
         ]);
 
+        // Ensure is_active is always set (default to false if not provided)
+        $validated['is_active'] = $request->has('is_active') && $request->is_active == '1';
+
         if ($request->hasFile('photo')) {
             $validated['photo_url'] = $request->file('photo')->store('products', 'public');
         }
@@ -64,6 +67,9 @@ class ProductController extends Controller
             'photo' => 'nullable|image|max:2048',
             'is_active' => 'boolean',
         ]);
+
+        // Ensure is_active is always set (default to false if not provided)
+        $validated['is_active'] = $request->has('is_active') && $request->is_active == '1';
 
         if ($request->hasFile('photo')) {
             if ($product->photo_url) {

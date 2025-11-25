@@ -10,8 +10,9 @@ Route::get('/menu/{product}', [MenuController::class, 'show'])->name('menu.show'
 
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
 Route::post('/cart/add/{product}', [CartController::class, 'add'])->name('cart.add');
-Route::put('/cart/{productId}', [CartController::class, 'update'])->name('cart.update');
-Route::delete('/cart/{productId}', [CartController::class, 'remove'])->name('cart.remove');
+Route::post('/cart/add-package/{package}', [CartController::class, 'addPackage'])->name('cart.addPackage');
+Route::put('/cart/{key}', [CartController::class, 'update'])->name('cart.update');
+Route::delete('/cart/{key}', [CartController::class, 'remove'])->name('cart.remove');
 
 Route::get('/checkout', function () {
     $paymentMethods = \App\Models\PaymentMethod::active()->orderBy('display_order')->orderBy('name')->get();
