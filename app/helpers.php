@@ -26,10 +26,21 @@ if (!function_exists('storage_url')) {
         
         // Use route-based URL if symlink doesn't exist
         try {
-            return route('storage', ['path' => $path]);
+            $url = route('storage', ['path' => $path]);
+            \Illuminate\Support\Facades\Log::info('storage_url generated', [
+                'path' => $path,
+                'url' => $url,
+            ]);
+            return $url;
         } catch (\Exception $e) {
             // Fallback to direct URL if route not available
-            return url('/storage/' . $path);
+            $url = url('/storage/' . $path);
+            \Illuminate\Support\Facades\Log::warning('storage_url fallback used', [
+                'path' => $path,
+                'url' => $url,
+                'error' => $e->getMessage(),
+            ]);
+            return $url;
         }
     }
 }

@@ -19,9 +19,10 @@ class StorageController extends Controller
         $path = str_replace('..', '', $path);
         
         // Log the request
-        Log::debug('StorageController: Requesting file', [
+        Log::info('StorageController: Requesting file', [
             'path' => $path,
             'full_path' => storage_path('app/public/' . $path),
+            'request_uri' => request()->getRequestUri(),
         ]);
         
         // Check if file exists in public disk

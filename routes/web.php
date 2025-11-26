@@ -7,8 +7,9 @@ use App\Http\Controllers\StorageController;
 use Illuminate\Support\Facades\Route;
 
 // Storage route for serving files without symlink
+// Must be registered early to avoid conflicts
 Route::get('/storage/{path}', [StorageController::class, 'show'])
-    ->where('path', '.*')
+    ->where('path', '[a-zA-Z0-9\/\._-]+')
     ->name('storage');
 
 Route::get('/', [MenuController::class, 'index'])->name('menu.index');
