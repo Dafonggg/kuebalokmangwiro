@@ -80,7 +80,20 @@ class ProductController extends Controller
         }
 
         try {
-            Product::create($validated);
+            // Log validated data before creating product
+            Log::info('Creating product with data', [
+                'validated_data' => $validated,
+                'has_photo_url' => isset($validated['photo_url']),
+                'photo_url' => $validated['photo_url'] ?? null,
+            ]);
+            
+            $product = Product::create($validated);
+            
+            // Log after creation to verify photo_url was saved
+            Log::info('Product created successfully', [
+                'product_id' => $product->id,
+                'photo_url' => $product->photo_url,
+            ]);
             
             return redirect()->route('admin.products.index')
                 ->with('success', 'Produk berhasil ditambahkan.');
@@ -193,7 +206,21 @@ class ProductController extends Controller
         }
 
         try {
+            // Log validated data before updating product
+            Log::info('Updating product with data', [
+                'product_id' => $product->id,
+                'validated_data' => $validated,
+                'has_photo_url' => isset($validated['photo_url']),
+                'photo_url' => $validated['photo_url'] ?? null,
+            ]);
+            
             $product->update($validated);
+            
+            // Log after update to verify photo_url was saved
+            Log::info('Product updated successfully', [
+                'product_id' => $product->id,
+                'photo_url' => $product->photo_url,
+            ]);
             
             return redirect()->route('admin.products.index')
                 ->with('success', 'Produk berhasil diperbarui.');
