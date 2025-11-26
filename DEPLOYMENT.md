@@ -99,7 +99,7 @@ ssh -p 65002 u123456789@ssh.hostinger.com
 
 # Atau jika menggunakan SSH key
 ssh -p 65002 -i ~/.ssh/id_rsa u123456789@ssh.hostinger.com
-```
+``` ssh -p 65002 -i ~/.ssh/id_rsa u153158394@ssh.kuebalokmangwiro.id
 
 ---
 

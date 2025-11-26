@@ -60,7 +60,7 @@
             @if($product->photo_url)
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Foto Saat Ini</label>
-                    <img src="{{ asset('storage/' . $product->photo_url) }}" alt="{{ $product->name }}" class="mt-2 h-32 w-32 object-cover rounded">
+                    <img src="{{ storage_url($product->photo_url) }}" alt="{{ $product->name }}" class="mt-2 h-32 w-32 object-cover rounded">
                 </div>
             @endif
 

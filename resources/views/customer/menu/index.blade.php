@@ -42,7 +42,7 @@
                         
                         <div class="aspect-square bg-gray-100 rounded-2xl overflow-hidden">
                             @if($package->photo_url)
-                                <img src="{{ asset('storage/' . $package->photo_url) }}" 
+                                <img src="{{ storage_url($package->photo_url) }}" 
                                      alt="{{ $package->name }}" 
                                      class="w-full h-full object-cover"
                                      loading="lazy"
@@ -110,7 +110,7 @@
                 
                 <div class="aspect-square bg-gray-100 rounded-2xl overflow-hidden">
                     @if($product->photo_url)
-                        <img src="{{ asset('storage/' . $product->photo_url) }}" 
+                        <img src="{{ storage_url($product->photo_url) }}" 
                              alt="{{ $product->name }}" 
                              class="w-full h-full object-cover"
                              loading="lazy"

@@ -170,7 +170,7 @@
                                                 <div class="text-base sm:text-base font-medium text-gray-900">{{ $method->name }}</div>
                                                 @if($method->qr_code_image)
                                                     <div class="mt-2">
-                                                        <img src="{{ asset('storage/' . $method->qr_code_image) }}" 
+                                                        <img src="{{ storage_url($method->qr_code_image) }}" 
                                                              alt="{{ $method->name }}" 
                                                              class="w-28 h-28 sm:w-32 sm:h-32 object-contain border border-gray-200 rounded">
                                                     </div>

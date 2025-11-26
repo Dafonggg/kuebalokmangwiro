@@ -18,7 +18,7 @@
                     <div class="flex items-center justify-between">
                         <div class="flex items-center space-x-4">
                             @if($package->photo_url)
-                                <img src="{{ asset('storage/' . $package->photo_url) }}" alt="{{ $package->name }}" class="h-16 w-16 object-cover rounded">
+                                <img src="{{ storage_url($package->photo_url) }}" alt="{{ $package->name }}" class="h-16 w-16 object-cover rounded">
                             @else
                                 <div class="h-16 w-16 bg-gray-200 rounded flex items-center justify-center">
                                     <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

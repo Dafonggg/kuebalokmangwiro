@@ -35,7 +35,7 @@
                             @endif
                             @if($method->qr_code_image)
                                 <div class="mt-2">
-                                    <img src="{{ asset('storage/' . $method->qr_code_image) }}" 
+                                    <img src="{{ storage_url($method->qr_code_image) }}" 
                                          alt="{{ $method->name }}" 
                                          class="w-24 h-24 object-contain border border-gray-200 rounded">
                                 </div>

@@ -41,7 +41,7 @@
                     <label for="qr_code_image" class="block text-sm font-medium text-gray-700">Gambar QR Code</label>
                     @if($paymentMethod->qr_code_image)
                         <div class="mb-2">
-                            <img src="{{ asset('storage/' . $paymentMethod->qr_code_image) }}" 
+                            <img src="{{ storage_url($paymentMethod->qr_code_image) }}" 
                                  alt="{{ $paymentMethod->name }}" 
                                  class="w-32 h-32 object-contain border border-gray-200 rounded">
                             <p class="text-sm text-gray-500 mt-1">Gambar saat ini</p>

@@ -91,7 +91,7 @@
                             
                             <div class="p-2 sm:p-3">
                                 @if($package->photo_url)
-                                    <img src="{{ asset('storage/' . $package->photo_url) }}" alt="{{ $package->name }}" 
+                                    <img src="{{ storage_url($package->photo_url) }}" alt="{{ $package->name }}" 
                                          class="w-full h-24 sm:h-32 object-cover rounded-lg bg-white">
                                 @else
                                     <div class="w-full h-24 sm:h-32 bg-gray-200 rounded-lg flex items-center justify-center">
@@ -140,7 +140,7 @@
                             
                             <div class="p-2 sm:p-3">
                                 @if($product->photo_url)
-                                    <img src="{{ asset('storage/' . $product->photo_url) }}" alt="{{ $product->name }}" 
+                                    <img src="{{ storage_url($product->photo_url) }}" alt="{{ $product->name }}" 
                                          class="w-full h-24 sm:h-32 object-cover rounded-lg bg-white">
                                 @else
                                     <div class="w-full h-24 sm:h-32 bg-gray-200 rounded-lg flex items-center justify-center">
@@ -510,8 +510,7 @@
 
         cart.forEach(item => {
             total += item.subtotal;
-            const storageBase = '{{ asset("storage") }}';
-            const photoUrl = item.photo_url ? storageBase + '/' + item.photo_url : '';
+            const photoUrl = item.photo_url ? '{{ url("/storage") }}/' + item.photo_url : '';
             const itemId = item.item_type === 'package' ? item.package_id : item.product_id;
             const itemType = item.item_type || 'product';
             const badge = item.item_type === 'package' ? '<span class="text-xs bg-[#2e4358] text-white px-1.5 py-0.5 rounded">Paket</span>' : '';

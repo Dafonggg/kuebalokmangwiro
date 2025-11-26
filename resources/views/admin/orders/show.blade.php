@@ -102,12 +102,12 @@
                     <div>
                         <p class="text-sm text-gray-500 mb-2">Bukti Pembayaran</p>
                         <div class="border border-gray-200 rounded-lg p-2 bg-gray-50">
-                            <img src="{{ asset('storage/' . $payment->proof_of_payment) }}" 
+                            <img src="{{ storage_url($payment->proof_of_payment) }}" 
                                  alt="Bukti Pembayaran" 
                                  class="max-w-full h-auto rounded cursor-pointer"
-                                 onclick="window.open('{{ asset('storage/' . $payment->proof_of_payment) }}', '_blank')">
+                                 onclick="window.open('{{ storage_url($payment->proof_of_payment) }}', '_blank')">
                         </div>
-                        <a href="{{ asset('storage/' . $payment->proof_of_payment) }}" 
+                        <a href="{{ storage_url($payment->proof_of_payment) }}" 
                            target="_blank" 
                            class="mt-2 inline-block text-sm text-[#2e4358] hover:text-[#1a2a3a]">
                             Buka gambar di tab baru →

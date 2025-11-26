@@ -3,7 +3,13 @@
 use App\Http\Controllers\Customer\CartController;
 use App\Http\Controllers\Customer\MenuController;
 use App\Http\Controllers\Customer\OrderController;
+use App\Http\Controllers\StorageController;
 use Illuminate\Support\Facades\Route;
+
+// Storage route for serving files without symlink
+Route::get('/storage/{path}', [StorageController::class, 'show'])
+    ->where('path', '.*')
+    ->name('storage');
 
 Route::get('/', [MenuController::class, 'index'])->name('menu.index');
 Route::get('/menu/{product}', [MenuController::class, 'show'])->name('menu.show');
