@@ -8,20 +8,29 @@ if (!function_exists('storage_url')) {
      * @param string $path Path to file in storage/app/public
      * @return string
      */
-    function storage_url(string $path): string
+    function storage_url(?string $path): string
     {
+        if (empty($path)) {
+            return '';
+        }
+        
         // Remove leading slash if present
         $path = ltrim($path, '/');
         
         // Check if symlink exists (for development/local environments)
         $symlinkPath = public_path('storage');
-        if (is_link($symlinkPath) || file_exists($symlinkPath)) {
+        if (is_link($symlinkPath) || (file_exists($symlinkPath) && is_dir($symlinkPath))) {
             // Use asset() if symlink exists
             return asset('storage/' . $path);
         }
         
         // Use route-based URL if symlink doesn't exist
-        return route('storage', ['path' => $path]);
+        try {
+            return route('storage', ['path' => $path]);
+        } catch (\Exception $e) {
+            // Fallback to direct URL if route not available
+            return url('/storage/' . $path);
+        }
     }
 }
 

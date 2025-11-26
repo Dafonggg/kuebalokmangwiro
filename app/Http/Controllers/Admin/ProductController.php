@@ -56,11 +56,30 @@ class ProductController extends Controller
                 $photoPath = $file->store('products', 'public');
                 
                 if ($photoPath) {
+                    // Verify file actually exists
+                    $fullPath = storage_path('app/public/' . $photoPath);
+                    $fileExists = file_exists($fullPath);
+                    $storageExists = Storage::disk('public')->exists($photoPath);
+                    
+                    if (!$fileExists || !$storageExists) {
+                        Log::error('Photo file not found after upload', [
+                            'path' => $photoPath,
+                            'full_path' => $fullPath,
+                            'file_exists' => $fileExists,
+                            'storage_exists' => $storageExists,
+                        ]);
+                        return back()->withInput()
+                            ->withErrors(['photo' => 'Gagal menyimpan foto. File tidak ditemukan setelah upload.']);
+                    }
+                    
                     $validated['photo_url'] = $photoPath;
                     Log::info('Photo uploaded successfully', [
                         'path' => $photoPath,
+                        'full_path' => $fullPath,
                         'original_name' => $file->getClientOriginalName(),
                         'size' => $file->getSize(),
+                        'file_exists' => $fileExists,
+                        'storage_exists' => $storageExists,
                     ]);
                 } else {
                     Log::error('Failed to store photo', [
@@ -94,9 +113,9 @@ class ProductController extends Controller
                 'product_id' => $product->id,
                 'photo_url' => $product->photo_url,
             ]);
-            
-            return redirect()->route('admin.products.index')
-                ->with('success', 'Produk berhasil ditambahkan.');
+
+        return redirect()->route('admin.products.index')
+            ->with('success', 'Produk berhasil ditambahkan.');
         } catch (\Exception $e) {
             // If product creation fails, delete uploaded photo
             if (isset($validated['photo_url'])) {
@@ -165,9 +184,9 @@ class ProductController extends Controller
                 
                 if ($photoPath) {
                     // Only delete old photo if new photo is successfully stored
-                    if ($product->photo_url) {
+            if ($product->photo_url) {
                         try {
-                            Storage::disk('public')->delete($product->photo_url);
+                Storage::disk('public')->delete($product->photo_url);
                             Log::info('Old photo deleted', ['path' => $product->photo_url]);
                         } catch (\Exception $deleteException) {
                             Log::warning('Failed to delete old photo', [
@@ -213,17 +232,17 @@ class ProductController extends Controller
                 'has_photo_url' => isset($validated['photo_url']),
                 'photo_url' => $validated['photo_url'] ?? null,
             ]);
-            
-            $product->update($validated);
+
+        $product->update($validated);
             
             // Log after update to verify photo_url was saved
             Log::info('Product updated successfully', [
                 'product_id' => $product->id,
                 'photo_url' => $product->photo_url,
             ]);
-            
-            return redirect()->route('admin.products.index')
-                ->with('success', 'Produk berhasil diperbarui.');
+
+        return redirect()->route('admin.products.index')
+            ->with('success', 'Produk berhasil diperbarui.');
         } catch (\Exception $e) {
             // If product update fails and we uploaded a new photo, delete it
             if (isset($validated['photo_url']) && $validated['photo_url'] !== $product->photo_url) {
