@@ -25,13 +25,25 @@ if (!function_exists('storage_url')) {
         }
         
         // Use route-based URL if symlink doesn't exist
+        // Check if route exists first to avoid exception
         try {
-            $url = route('storage', ['path' => $path]);
-            \Illuminate\Support\Facades\Log::info('storage_url generated', [
-                'path' => $path,
-                'url' => $url,
-            ]);
-            return $url;
+            $routes = \Illuminate\Support\Facades\Route::getRoutes();
+            if ($routes->hasNamedRoute('storage')) {
+                $url = route('storage', ['path' => $path]);
+                \Illuminate\Support\Facades\Log::info('storage_url generated via route', [
+                    'path' => $path,
+                    'url' => $url,
+                ]);
+                return $url;
+            } else {
+                // Route not registered, use direct URL
+                $url = url('/storage/' . $path);
+                \Illuminate\Support\Facades\Log::info('storage_url using direct URL (route not found)', [
+                    'path' => $path,
+                    'url' => $url,
+                ]);
+                return $url;
+            }
         } catch (\Exception $e) {
             // Fallback to direct URL if route not available
             $url = url('/storage/' . $path);

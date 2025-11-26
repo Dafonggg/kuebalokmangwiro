@@ -87,7 +87,7 @@ class ProductController extends Controller
                     ]);
                     return back()->withInput()
                         ->withErrors(['photo' => 'Gagal menyimpan foto. Silakan coba lagi.']);
-                }
+        }
             } catch (\Exception $e) {
                 Log::error('Error uploading photo', [
                     'error' => $e->getMessage(),
