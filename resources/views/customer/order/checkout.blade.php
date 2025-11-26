@@ -9,13 +9,27 @@
     $cart = session('cart', []);
     $items = [];
     $total = 0;
-    foreach ($cart as $productId => $item) {
-        $product = \App\Models\Product::find($productId);
-        if ($product && $product->is_active) {
-            $item['product'] = $product;
-            $item['subtotal'] = $product->price * $item['quantity'];
-            $total += $item['subtotal'];
-            $items[$productId] = $item;
+    foreach ($cart as $key => $item) {
+        if (isset($item['item_type']) && $item['item_type'] === 'package') {
+            $package = \App\Models\ProductPackage::with('items.product')->find($item['id']);
+            if ($package && $package->is_active) {
+                $item['package'] = $package;
+                $item['subtotal'] = $package->price * $item['quantity'];
+                $total += $item['subtotal'];
+                $items[$key] = $item;
+            }
+        } else {
+            // Legacy support for old cart format (product only)
+            $productId = is_numeric($key) ? $key : ($item['id'] ?? null);
+            $product = \App\Models\Product::find($productId);
+            if ($product && $product->is_active) {
+                $item['product'] = $product;
+                $item['item_type'] = $item['item_type'] ?? 'product';
+                $item['id'] = $productId;
+                $item['subtotal'] = $product->price * $item['quantity'];
+                $total += $item['subtotal'];
+                $items[$key] = $item;
+            }
         }
     }
 @endphp
@@ -33,11 +47,27 @@
             <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 w-full">
                 <h2 class="text-lg sm:text-xl font-semibold text-gray-900 mb-4">Detail Pesanan</h2>
                 <div class="divide-y divide-gray-200">
-                    @foreach($items as $item)
+                    @foreach($items as $key => $item)
                         <div class="py-3 sm:py-4 flex justify-between items-start">
                             <div class="flex-1 pr-2">
-                                <p class="text-sm sm:text-base font-medium text-gray-900">{{ $item['product']->name }}</p>
-                                <p class="text-xs sm:text-sm text-gray-600 mt-1">Qty: {{ $item['quantity'] }}</p>
+                                @if(isset($item['package']))
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <p class="text-sm sm:text-base font-medium text-gray-900">{{ $item['package']->name }}</p>
+                                        <span class="bg-[#2e4358] text-white text-xs font-semibold px-2 py-0.5 rounded">Paket</span>
+                                    </div>
+                                    <p class="text-xs sm:text-sm text-gray-600 mt-1">Qty: {{ $item['quantity'] }}</p>
+                                    <div class="text-xs text-gray-500 mt-1">
+                                        <p class="font-semibold">Isi paket:</p>
+                                        <ul class="list-disc list-inside ml-2">
+                                            @foreach($item['package']->items as $packageItem)
+                                                <li>{{ $packageItem->product->name }} x{{ $packageItem->qty }}</li>
+                                            @endforeach
+                                        </ul>
+                                    </div>
+                                @elseif(isset($item['product']))
+                                    <p class="text-sm sm:text-base font-medium text-gray-900">{{ $item['product']->name }}</p>
+                                    <p class="text-xs sm:text-sm text-gray-600 mt-1">Qty: {{ $item['quantity'] }}</p>
+                                @endif
                             </div>
                             <p class="text-sm sm:text-base font-semibold text-gray-900 whitespace-nowrap">Rp {{ number_format($item['subtotal'], 0, ',', '.') }}</p>
                         </div>

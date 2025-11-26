@@ -11,6 +11,7 @@ use App\Models\Product;
 use App\Models\ProductPackage;
 use App\Services\OrderCodeGenerator;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class OrderController extends Controller
@@ -146,62 +147,78 @@ class OrderController extends Controller
             return redirect()->route('cart.index')->with('error', 'Tidak ada produk valid di keranjang.');
         }
 
-        $order = Order::create([
-            'order_code' => OrderCodeGenerator::generate(),
-            'customer_name' => $request->customer_name,
-            'customer_email' => $request->customer_email,
-            'customer_phone' => $request->customer_phone,
-            'payment_method' => $request->payment_method,
-            'order_type' => $request->order_type,
-            'table_number' => $request->order_type === 'dine-in' ? $request->table_number : null,
-            'notes' => $request->notes,
-            'total_amount' => $totalAmount,
-            'payment_status' => 'unpaid',
-            'order_status' => 'pending',
-        ]);
+        try {
+            DB::beginTransaction();
 
-        // Handle proof of payment file upload
-        $proofOfPaymentPath = null;
-        if ($request->hasFile('proof_of_payment')) {
-            $file = $request->file('proof_of_payment');
-            $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-            $proofOfPaymentPath = $file->storeAs('proof-of-payments', $filename, 'public');
-        }
-
-        // Create payment record immediately with selected payment method
-        Payment::create([
-            'order_id' => $order->id,
-            'amount' => $totalAmount,
-            'payment_method' => $request->payment_method,
-            'proof_of_payment' => $proofOfPaymentPath,
-            'approved_by' => null, // Will be set when admin confirms payment
-        ]);
-
-        // Decrease stock per category
-        foreach ($categoryQuantities as $categoryId => $totalQuantity) {
-            $category = Category::find($categoryId);
-            if ($category) {
-                $category->decrement('stock', $totalQuantity);
-            }
-        }
-
-        foreach ($orderItems as $item) {
-            OrderItem::create([
-                'order_id' => $order->id,
-                'item_type' => $item['item_type'],
-                'reference_id' => $item['reference_id'],
-                'product_id' => $item['product_id'] ?? null,
-                'quantity' => $item['quantity'],
-                'price' => $item['price'],
-                'subtotal' => $item['subtotal'],
-                'components' => $item['components'] ?? null,
+            $order = Order::create([
+                'order_code' => OrderCodeGenerator::generate(),
+                'customer_name' => $request->customer_name,
+                'customer_email' => $request->customer_email,
+                'customer_phone' => $request->customer_phone,
+                'payment_method' => $request->payment_method,
+                'order_type' => $request->order_type,
+                'table_number' => $request->order_type === 'dine-in' ? $request->table_number : null,
+                'notes' => $request->notes,
+                'total_amount' => $totalAmount,
+                'payment_status' => 'unpaid',
+                'order_status' => 'pending',
             ]);
+
+            // Handle proof of payment file upload
+            $proofOfPaymentPath = null;
+            if ($request->hasFile('proof_of_payment')) {
+                $file = $request->file('proof_of_payment');
+                $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                $proofOfPaymentPath = $file->storeAs('proof-of-payments', $filename, 'public');
+            }
+
+            // Create payment record immediately with selected payment method
+            Payment::create([
+                'order_id' => $order->id,
+                'amount' => $totalAmount,
+                'payment_method' => $request->payment_method,
+                'proof_of_payment' => $proofOfPaymentPath,
+                'approved_by' => null, // Will be set when admin confirms payment
+            ]);
+
+            // Decrease stock per category
+            foreach ($categoryQuantities as $categoryId => $totalQuantity) {
+                $category = Category::find($categoryId);
+                if ($category) {
+                    $category->decrement('stock', $totalQuantity);
+                }
+            }
+
+            foreach ($orderItems as $item) {
+                OrderItem::create([
+                    'order_id' => $order->id,
+                    'item_type' => $item['item_type'],
+                    'reference_id' => $item['reference_id'],
+                    'product_id' => $item['product_id'] ?? null,
+                    'quantity' => $item['quantity'],
+                    'price' => $item['price'],
+                    'subtotal' => $item['subtotal'],
+                    'components' => $item['components'] ?? null,
+                ]);
+            }
+
+            DB::commit();
+
+            session()->forget('cart');
+
+            return redirect()->route('orders.show', $order->order_code)
+                ->with('success', 'Pesanan berhasil dibuat! Kode pesanan: ' . $order->order_code);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            \Log::error('Checkout error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'request' => $request->all()
+            ]);
+
+            return redirect()->route('cart.index')
+                ->with('error', 'Terjadi kesalahan saat membuat pesanan. Silakan coba lagi atau hubungi admin.');
         }
-
-        session()->forget('cart');
-
-        return redirect()->route('orders.show', $order->order_code)
-            ->with('success', 'Pesanan berhasil dibuat! Kode pesanan: ' . $order->order_code);
     }
 
     public function show($orderCode)
